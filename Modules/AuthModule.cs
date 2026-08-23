@@ -31,7 +31,8 @@ public sealed class AuthModule : ICarterModule
                     .FirstOrDefault(p => p.Email == request.Email && p.Password == request.Password);
             if (user is null)
             {
-                return Results.Unauthorized();
+                var error = Result<string>.Failure("Geçersiz kullanıcı adı ya da şifre");
+                return Results.BadRequest(error);
             }
 
             var token = jwtProvider.CreateToken(user);
