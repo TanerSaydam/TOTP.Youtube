@@ -37,4 +37,34 @@ public sealed class JwtProvider(IConfiguration configuration)
 
         return token;
     }
+
+    public string CreateTokenForTOTP(User user)
+    {
+        var issuer = configuration.GetSection("JWT_TOTP:Issuer").Value;
+        var audience = configuration.GetSection("JWT_TOTP:Audience").Value;
+        var secretKey = configuration.GetSection("JWT_TOTP:SecretKey").Value!;
+
+        var claims = new List<Claim>()
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Email, user.Email),
+        };
+
+        var expires = DateTime.Now.AddMinutes(5);
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
+        var signingCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        JwtSecurityToken jwtSecurityToken = new(
+            issuer: issuer,
+            audience: audience,
+            claims: claims,
+            notBefore: DateTime.Now,
+            expires: expires,
+            signingCredentials: signingCredentials);
+
+        var handler = new JwtSecurityTokenHandler();
+        var token = handler.WriteToken(jwtSecurityToken);
+
+        return token;
+    }
 }
